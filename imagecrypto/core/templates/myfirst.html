@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    #dropbox {
+      width: 300px;
+      height: 200px;
+      border: 2px dashed #ccc;
+      border-radius: 10px;
+      text-align: center;
+      line-height: 200px;
+      font-size: 16px;
+      color: #aaa;
+      margin-bottom: 20px;
+    }
+    #dropbox.hover {
+      border-color: #333;
+      color: #333;
+    }
+    #preview {
+      max-width: 300px;
+      max-height: 200px;
+      display: block;
+      margin-top: 10px;
+    }
+    #encryptedCanvas {
+      display: none;
+      border: 1px solid #000;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Lets Encrypt some stuff!</h1>
+
+<div id="dropbox">Drop a PNG image here</div>
+<img id="preview" src="" alt="Image preview will appear here" />
+<canvas id="encryptedCanvas"></canvas>
+<br>
+<button id="encryptImageBtn" style="margin-bottom:20px;">Encrypt Image</button>
+<button id="decryptImageBtn" style="margin-bottom:20px;">Decrypt Image</button>
+
+<form method="post">
+  {% csrf_token %}
+  <label for="plain_text">Enter Plaintext:</label><br>
+  <textarea id="plain_text" name="plain_text" rows="4" cols="50"></textarea><br><br>
+
+  <label for="cipher_text">Enter Ciphertext:</label><br>
+  <textarea id="cipher_text" name="cipher_text" rows="4" cols="50"></textarea><br><br>
+
+  <label for="key">Enter Key:</label><br>
+  <input type="text" id="key" name="key"><br><br>
+
+  <button type="submit">Encrypt</button>
+
+  <button type="submit">Decrypt</button>
+</form>
+
+<p>Encrypted Text: {{ encrypted_text }}</p>
+
+<p>Decrypted Text: {{ decrypted_text }}</p>
+
+<script>
+  const dropbox = document.getElementById('dropbox');
+  const preview = document.getElementById('preview');
+  const encryptedCanvas = document.getElementById('encryptedCanvas');
+  const encryptImageBtn = document.getElementById('encryptImageBtn');
+  const decryptImageBtn = document.getElementById('decryptImageBtn');
+
+  let globalPixelArray = null;
+  let imageWidth = 0;
+  let imageHeight = 0;
+
+  dropbox.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropbox.classList.add('hover');
+  });
+
+  dropbox.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    dropbox.classList.remove('hover');
+  });
+
+  dropbox.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropbox.classList.remove('hover');
+
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      if (file.type === "image/png") {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          preview.src = event.target.result;
+
+          // Extract pixel data array from the dropped image
+          const img = new Image();
+          img.onload = function() {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            imageWidth = img.width;
+            imageHeight = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            globalPixelArray = Array.from(imageData.data); // Convert to regular array
+            console.log('Pixel array length:', globalPixelArray.length);
+          };
+          img.src = event.target.result;
+
+          // Send the image to the server
+          fetch('/upload_image/', {
+            method: 'POST',
+            headers: {
+              'X-CSRFToken': '{{ csrf_token }}',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({image_data: event.target.result})
+          })
+          .then(response => response.json())
+          .then(data => {
+            console.log('Image uploaded:', data);
+          })
+          .catch(error => {
+            console.error('Error uploading image:', error);
+          });
+        };
+        reader.readAsDataURL(file);
+      } else {
+        alert('Please drop a PNG image.');
+      }
+    }
+  });
+
+  encryptImageBtn.addEventListener('click', () => {
+    const key = document.getElementById('key').value;
+    if (!globalPixelArray) {
+      alert('Please drop a PNG image first.');
+      return;
+    }
+    if (!key) {
+      alert('Please enter a key.');
+      return;
+    }
+
+    fetch('/encrypt_image/', {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': '{{ csrf_token }}',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ pixel_array: globalPixelArray, key: key })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'success') {
+        console.log(globalPixelArray)
+        const encryptedPixels = data.encrypted_pixels;
+        const canvas = encryptedCanvas;
+        canvas.width = imageWidth;
+        canvas.height = imageHeight;
+        canvas.style.display = 'block';
+        const ctx = canvas.getContext('2d');
+        const imageData = ctx.createImageData(canvas.width, canvas.height);
+        for (let i = 0; i < encryptedPixels.length; i++) {
+          imageData.data[i] = encryptedPixels[i];
+        }
+        ctx.putImageData(imageData, 0, 0);
+        globalPixelArray = encryptedPixels; // Update globalPixelArray to encrypted pixels for decryption
+      } else {
+        alert('Encryption failed: ' + data.message);
+      }
+    })
+    .catch(error => {
+      console.error('Error encrypting image:', error);
+    });
+  });
+
+  decryptImageBtn.addEventListener('click', () => {
+    const key = document.getElementById('key').value;
+    if (!globalPixelArray) {
+      alert('Please drop a PNG image first.');
+      return;
+    }
+    if (!key) {
+      alert('Please enter a key.');
+      return;
+    }
+
+    fetch('/decrypt_image/', {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': '{{ csrf_token }}',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ encrypted_array: globalPixelArray, key: key })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'success') {
+        const decryptedPixels = data.decrypted_pixels;
+        const canvas = encryptedCanvas;
+        canvas.width = imageWidth;
+        canvas.height = imageHeight;
+        canvas.style.display = 'block';
+        const ctx = canvas.getContext('2d');
+        const imageData = ctx.createImageData(canvas.width, canvas.height);
+        for (let i = 0; i < decryptedPixels.length; i++) {
+          imageData.data[i] = decryptedPixels[i];
+        }
+        ctx.putImageData(imageData, 0, 0);
+        globalPixelArray = decryptedPixels; // Update globalPixelArray to decrypted pixels
+      } else {
+        alert('Decryption failed: ' + data.message);
+      }
+    })
+    .catch(error => {
+      console.error('Error decrypting image:', error);
+    });
+  });
+</script>
+
+</body>
+</html>
+</create_file>
