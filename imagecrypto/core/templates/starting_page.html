@@ -6,13 +6,20 @@
   <title>Encryption Home</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-900 min-h-screen flex items-center justify-center p-6 text-gray-100">
-  <div class="bg-gray-800 rounded-lg shadow-lg max-w-md w-full p-8 text-center">
-    <h1 class="text-4xl font-bold mb-10 text-indigo-400">Welcome to Encryption Hub</h1>
-    <div class="space-y-6">
-      <a href="{% url 'text_encryption' %}" class="block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-4 rounded-md shadow transition">Text Encryption</a>
-      <a href="{% url 'image_encryption' %}" class="block bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold py-4 rounded-md shadow transition">Image Encryption</a>
+<body class="bg-gray-900 min-h-screen flex text-gray-100">
+  <nav class="w-48 bg-gray-800 p-6 flex flex-col space-y-6">
+    <a href="{% url 'starting_page' %}" class="text-indigo-400 font-semibold hover:text-indigo-600">Home</a>
+    <a href="{% url 'text_encryption' %}" class="text-gray-300 hover:text-indigo-400">Text Encryption</a>
+    <a href="{% url 'image_encryption' %}" class="text-gray-300 hover:text-indigo-400">Image Encryption</a>
+  </nav>
+  <main class="flex-1 p-8">
+    <div class="bg-gray-800 rounded-lg shadow-lg max-w-md mx-auto p-8 text-center">
+      <h1 class="text-4xl font-bold mb-10 text-indigo-400">Welcome to Encryption Hub</h1>
+      <div class="space-y-6">
+        <a href="{% url 'text_encryption' %}" class="block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-4 rounded-md shadow transition">Text Encryption</a>
+        <a href="{% url 'image_encryption' %}" class="block bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold py-4 rounded-md shadow transition">Image Encryption</a>
+      </div>
     </div>
-  </div>
+  </main>
 </body>
 </html>

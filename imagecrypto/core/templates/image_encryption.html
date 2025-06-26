@@ -7,39 +7,42 @@
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-900 min-h-screen flex items-center justify-center p-6 text-gray-100">
-  <div class="bg-gray-800 rounded-lg shadow-lg max-w-3xl w-full p-8">
-    <h1 class="text-3xl font-bold mb-8 text-center text-indigo-400">Let's Encrypt Some Stuff!</h1>
+<body class="bg-gray-900 min-h-screen flex text-gray-100">
+  <nav class="w-48 bg-gray-800 p-6 flex flex-col space-y-6">
+    <a href="{% url 'starting_page' %}" class="text-gray-300 hover:text-indigo-400">Home</a>
+    <a href="{% url 'text_encryption' %}" class="text-gray-300 hover:text-indigo-400">Text Encryption</a>
+    <a href="{% url 'image_encryption' %}" class="text-indigo-400 font-semibold hover:text-indigo-600">Image Encryption</a>
+  </nav>
+  <main class="flex-1 p-8">
+    <div class="bg-gray-800 rounded-lg shadow-lg max-w-3xl w-full p-8">
+      <h1 class="text-3xl font-bold mb-8 text-center text-indigo-400">Let's Encrypt Some Stuff!</h1>
 
-    <div id="dropbox" class="w-full h-48 border-4 border-dashed border-gray-600 rounded-lg flex items-center justify-center text-gray-500 text-lg font-medium mb-6 transition-colors duration-300 cursor-pointer hover:border-indigo-500 hover:text-indigo-400">
-      Drop a PNG image here
-    </div>
-
-    <img id="preview" src="" alt="Image preview will appear here" class="max-w-full max-h-48 mx-auto mb-6 rounded-md shadow-sm" />
-    <canvas id="encryptedCanvas" class="hidden border border-gray-600 rounded-md mx-auto mb-6"></canvas>
-
-    <div class="flex justify-center space-x-4 mb-8">
-      <button id="encryptImageBtn" class="bg-indigo-600 text-white px-6 py-2 rounded-md shadow hover:bg-indigo-700 transition">Encrypt Image</button>
-      <button id="decryptImageBtn" class="bg-gray-700 text-gray-300 px-6 py-2 rounded-md shadow hover:bg-gray-600 transition">Decrypt Image</button>
-    </div>
-
-    <form method="post" class="space-y-6">
-      {% csrf_token %}
-      <div>
-        <label for="key" class="block text-gray-300 font-semibold mb-2">Enter Key:</label>
-        <input type="text" id="key" name="key" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-100" />
+      <div id="dropbox" class="w-full h-48 border-4 border-dashed border-gray-600 rounded-lg flex items-center justify-center text-gray-500 text-lg font-medium mb-6 transition-colors duration-300 cursor-pointer hover:border-indigo-500 hover:text-indigo-400">
+        Drop a PNG image here
       </div>
 
-      <div class="flex space-x-4">
-        <button type="submit" name="action" value="encrypt" class="bg-indigo-600 text-white px-6 py-2 rounded-md shadow hover:bg-indigo-700 transition flex-1">Encrypt</button>
-        <button type="submit" name="action" value="decrypt" class="bg-gray-300 text-gray-700 px-6 py-2 rounded-md shadow hover:bg-gray-400 transition flex-1">Decrypt</button>
+      <img id="preview" src="" alt="Image preview will appear here" class="max-w-full max-h-48 mx-auto mb-6 rounded-md shadow-sm" />
+      <canvas id="encryptedCanvas" class="hidden border border-gray-600 rounded-md mx-auto mb-6"></canvas>
+
+      <div class="flex justify-center space-x-4 mb-8">
+        <button id="encryptImageBtn" class="bg-indigo-600 text-white px-6 py-2 rounded-md shadow hover:bg-indigo-700 transition">Encrypt Image</button>
+        <button id="decryptImageBtn" class="bg-gray-700 text-gray-300 px-6 py-2 rounded-md shadow hover:bg-gray-600 transition">Decrypt Image</button>
       </div>
-    </form>
 
-    <p class="mt-6 text-center text-green-400 font-semibold">Encrypted Text: {{ encrypted_text }}</p>
-    <p class="mt-2 text-center text-indigo-400 font-semibold">Decrypted Text: {{ decrypted_text }}</p>
-  </div>
+      <form method="post" class="space-y-6">
+        {% csrf_token %}
+        <div>
+          <label for="key" class="block text-gray-300 font-semibold mb-2">Enter Key:</label>
+          <input type="text" id="key" name="key" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-100" />
+        </div>
 
+        <div class="flex space-x-4">
+          <button type="submit" name="action" value="encrypt" class="bg-indigo-600 text-white px-6 py-2 rounded-md shadow hover:bg-indigo-700 transition flex-1">Encrypt</button>
+          <button type="submit" name="action" value="decrypt" class="bg-gray-700 text-gray-300 px-6 py-2 rounded-md shadow hover:bg-gray-600 transition flex-1">Decrypt</button>
+        </div>
+      </form>
+    </div>
+  </main>
   <script>
     const dropbox = document.getElementById('dropbox');
     const preview = document.getElementById('preview');
@@ -200,6 +203,6 @@
       });
     });
   </script>
+</main>
 </body>
 </html>
-</create_file>

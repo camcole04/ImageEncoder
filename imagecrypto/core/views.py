@@ -3,7 +3,7 @@ from django.http import HttpResponse, JsonResponse
 from django.template import loader
 from django.views.decorators.csrf import csrf_exempt
 import json
-from core.crypto import aes_encrypt_text, aes_decrypt_text, aes_encrypt_image, aes_decrypt_image
+from core.crypto import aes_encrypt_text, aes_decrypt_text, aes_encrypt_image, aes_decrypt_image, vigenere_encrypt, vigenere_decrypt
 
 # Create your views here.
 def image_encryption_view(request):
