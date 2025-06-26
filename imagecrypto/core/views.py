@@ -6,9 +6,9 @@ import json
 from core.crypto import aes_encrypt_text, aes_decrypt_text, aes_encrypt_image, aes_decrypt_image
 
 # Create your views here.
-def members(request):
-  template = loader.get_template('myfirst.html')
-  return HttpResponse(template.render())
+def image_encryption_view(request):
+    template = loader.get_template('myfirst.html')
+    return HttpResponse(template.render())
 
 def vigenere_view(request):
     encrypted_text = ""
@@ -18,16 +18,20 @@ def vigenere_view(request):
         cipher_text = request.POST.get("cipher_text", "")
         key = request.POST.get("key", "")
         if plain_text and key:
-            encrypted_text = aes_encrypt_text(plain_text, key)
+            encrypted_text = vigenere_encrypt(plain_text, key)
 
         if cipher_text and key:
-            decrypted_text = aes_decrypt_text(cipher_text, key)
+            decrypted_text = vigenere_decrypt(cipher_text, key)
 
     context = {
         'encrypted_text': encrypted_text,
         'decrypted_text': decrypted_text,
     }
-    return render(request, 'myfirst.html', context)
+    return render(request, 'text_encryption.html', context)
+
+def starting_page(request):
+    template = loader.get_template('starting_page.html')
+    return HttpResponse(template.render())
 
 @csrf_exempt
 def upload_image(request):

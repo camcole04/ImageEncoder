@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Text Encryption</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 min-h-screen flex items-center justify-center p-6 text-gray-100">
+  <div class="bg-gray-800 rounded-lg shadow-lg max-w-3xl w-full p-8">
+    <h1 class="text-3xl font-bold mb-8 text-center text-indigo-400">Text Encryption with Vigenere Cipher</h1>
+
+    <form method="post" class="space-y-6">
+      {% csrf_token %}
+      <div>
+        <label for="plain_text" class="block text-gray-300 font-semibold mb-2">Enter Plaintext:</label>
+        <textarea id="plain_text" name="plain_text" rows="4" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none text-gray-100"></textarea>
+      </div>
+
+      <div>
+        <label for="cipher_text" class="block text-gray-300 font-semibold mb-2">Enter Ciphertext:</label>
+        <textarea id="cipher_text" name="cipher_text" rows="4" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none text-gray-100"></textarea>
+      </div>
+
+      <div>
+        <label for="key" class="block text-gray-300 font-semibold mb-2">Enter Key:</label>
+        <input type="text" id="key" name="key" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-100" />
+      </div>
+
+      <div class="flex space-x-4">
+        <button type="submit" name="action" value="encrypt" class="bg-indigo-600 text-white px-6 py-2 rounded-md shadow hover:bg-indigo-700 transition flex-1">Encrypt</button>
+        <button type="submit" name="action" value="decrypt" class="bg-gray-700 text-gray-300 px-6 py-2 rounded-md shadow hover:bg-gray-600 transition flex-1">Decrypt</button>
+      </div>
+    </form>
+
+    <p class="mt-6 text-center text-green-400 font-semibold">Encrypted Text: {{ encrypted_text }}</p>
+    <p class="mt-2 text-center text-indigo-400 font-semibold">Decrypted Text: {{ decrypted_text }}</p>
+  </div>
+</body>
+</html>

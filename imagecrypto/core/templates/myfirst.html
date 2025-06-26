@@ -1,227 +1,205 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <style>
-    #dropbox {
-      width: 300px;
-      height: 200px;
-      border: 2px dashed #ccc;
-      border-radius: 10px;
-      text-align: center;
-      line-height: 200px;
-      font-size: 16px;
-      color: #aaa;
-      margin-bottom: 20px;
-    }
-    #dropbox.hover {
-      border-color: #333;
-      color: #333;
-    }
-    #preview {
-      max-width: 300px;
-      max-height: 200px;
-      display: block;
-      margin-top: 10px;
-    }
-    #encryptedCanvas {
-      display: none;
-      border: 1px solid #000;
-      margin-top: 10px;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Image Encryptor</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-gray-900 min-h-screen flex items-center justify-center p-6 text-gray-100">
+  <div class="bg-gray-800 rounded-lg shadow-lg max-w-3xl w-full p-8">
+    <h1 class="text-3xl font-bold mb-8 text-center text-indigo-400">Let's Encrypt Some Stuff!</h1>
 
-<h1>Lets Encrypt some stuff!</h1>
+    <div id="dropbox" class="w-full h-48 border-4 border-dashed border-gray-600 rounded-lg flex items-center justify-center text-gray-500 text-lg font-medium mb-6 transition-colors duration-300 cursor-pointer hover:border-indigo-500 hover:text-indigo-400">
+      Drop a PNG image here
+    </div>
 
-<div id="dropbox">Drop a PNG image here</div>
-<img id="preview" src="" alt="Image preview will appear here" />
-<canvas id="encryptedCanvas"></canvas>
-<br>
-<button id="encryptImageBtn" style="margin-bottom:20px;">Encrypt Image</button>
-<button id="decryptImageBtn" style="margin-bottom:20px;">Decrypt Image</button>
+    <img id="preview" src="" alt="Image preview will appear here" class="max-w-full max-h-48 mx-auto mb-6 rounded-md shadow-sm" />
+    <canvas id="encryptedCanvas" class="hidden border border-gray-600 rounded-md mx-auto mb-6"></canvas>
 
-<form method="post">
-  {% csrf_token %}
-  <label for="plain_text">Enter Plaintext:</label><br>
-  <textarea id="plain_text" name="plain_text" rows="4" cols="50"></textarea><br><br>
+    <div class="flex justify-center space-x-4 mb-8">
+      <button id="encryptImageBtn" class="bg-indigo-600 text-white px-6 py-2 rounded-md shadow hover:bg-indigo-700 transition">Encrypt Image</button>
+      <button id="decryptImageBtn" class="bg-gray-700 text-gray-300 px-6 py-2 rounded-md shadow hover:bg-gray-600 transition">Decrypt Image</button>
+    </div>
 
-  <label for="cipher_text">Enter Ciphertext:</label><br>
-  <textarea id="cipher_text" name="cipher_text" rows="4" cols="50"></textarea><br><br>
+    <form method="post" class="space-y-6">
+      {% csrf_token %}
+      <div>
+        <label for="key" class="block text-gray-300 font-semibold mb-2">Enter Key:</label>
+        <input type="text" id="key" name="key" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-100" />
+      </div>
 
-  <label for="key">Enter Key:</label><br>
-  <input type="text" id="key" name="key"><br><br>
+      <div class="flex space-x-4">
+        <button type="submit" name="action" value="encrypt" class="bg-indigo-600 text-white px-6 py-2 rounded-md shadow hover:bg-indigo-700 transition flex-1">Encrypt</button>
+        <button type="submit" name="action" value="decrypt" class="bg-gray-300 text-gray-700 px-6 py-2 rounded-md shadow hover:bg-gray-400 transition flex-1">Decrypt</button>
+      </div>
+    </form>
 
-  <button type="submit">Encrypt</button>
+    <p class="mt-6 text-center text-green-400 font-semibold">Encrypted Text: {{ encrypted_text }}</p>
+    <p class="mt-2 text-center text-indigo-400 font-semibold">Decrypted Text: {{ decrypted_text }}</p>
+  </div>
 
-  <button type="submit">Decrypt</button>
-</form>
+  <script>
+    const dropbox = document.getElementById('dropbox');
+    const preview = document.getElementById('preview');
+    const encryptedCanvas = document.getElementById('encryptedCanvas');
+    const encryptImageBtn = document.getElementById('encryptImageBtn');
+    const decryptImageBtn = document.getElementById('decryptImageBtn');
 
-<p>Encrypted Text: {{ encrypted_text }}</p>
+    let globalPixelArray = null;
+    let imageWidth = 0;
+    let imageHeight = 0;
 
-<p>Decrypted Text: {{ decrypted_text }}</p>
+    dropbox.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropbox.classList.add('border-indigo-500', 'text-indigo-500');
+    });
 
-<script>
-  const dropbox = document.getElementById('dropbox');
-  const preview = document.getElementById('preview');
-  const encryptedCanvas = document.getElementById('encryptedCanvas');
-  const encryptImageBtn = document.getElementById('encryptImageBtn');
-  const decryptImageBtn = document.getElementById('decryptImageBtn');
+    dropbox.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      dropbox.classList.remove('border-indigo-500', 'text-indigo-500');
+    });
 
-  let globalPixelArray = null;
-  let imageWidth = 0;
-  let imageHeight = 0;
+    dropbox.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropbox.classList.remove('border-indigo-500', 'text-indigo-500');
 
-  dropbox.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropbox.classList.add('hover');
-  });
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        const file = files[0];
+        if (file.type === "image/png") {
+          const reader = new FileReader();
+          reader.onload = function(event) {
+            preview.src = event.target.result;
 
-  dropbox.addEventListener('dragleave', (e) => {
-    e.preventDefault();
-    dropbox.classList.remove('hover');
-  });
+            // Extract pixel data array from the dropped image
+            const img = new Image();
+            img.onload = function() {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.width;
+              canvas.height = img.height;
+              imageWidth = img.width;
+              imageHeight = img.height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0);
+              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              globalPixelArray = Array.from(imageData.data); // Convert to regular array
+              console.log('Pixel array length:', globalPixelArray.length);
+            };
+            img.src = event.target.result;
 
-  dropbox.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropbox.classList.remove('hover');
-
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      const file = files[0];
-      if (file.type === "image/png") {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-          preview.src = event.target.result;
-
-          // Extract pixel data array from the dropped image
-          const img = new Image();
-          img.onload = function() {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            imageWidth = img.width;
-            imageHeight = img.height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            globalPixelArray = Array.from(imageData.data); // Convert to regular array
-            console.log('Pixel array length:', globalPixelArray.length);
+            // Send the image to the server
+            fetch('/upload_image/', {
+              method: 'POST',
+              headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({image_data: event.target.result})
+            })
+            .then(response => response.json())
+            .then(data => {
+              console.log('Image uploaded:', data);
+            })
+            .catch(error => {
+              console.error('Error uploading image:', error);
+            });
           };
-          img.src = event.target.result;
-
-          // Send the image to the server
-          fetch('/upload_image/', {
-            method: 'POST',
-            headers: {
-              'X-CSRFToken': '{{ csrf_token }}',
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({image_data: event.target.result})
-          })
-          .then(response => response.json())
-          .then(data => {
-            console.log('Image uploaded:', data);
-          })
-          .catch(error => {
-            console.error('Error uploading image:', error);
-          });
-        };
-        reader.readAsDataURL(file);
-      } else {
-        alert('Please drop a PNG image.');
-      }
-    }
-  });
-
-  encryptImageBtn.addEventListener('click', () => {
-    const key = document.getElementById('key').value;
-    if (!globalPixelArray) {
-      alert('Please drop a PNG image first.');
-      return;
-    }
-    if (!key) {
-      alert('Please enter a key.');
-      return;
-    }
-
-    fetch('/encrypt_image/', {
-      method: 'POST',
-      headers: {
-        'X-CSRFToken': '{{ csrf_token }}',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ pixel_array: globalPixelArray, key: key })
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.status === 'success') {
-        console.log(globalPixelArray)
-        const encryptedPixels = data.encrypted_pixels;
-        const canvas = encryptedCanvas;
-        canvas.width = imageWidth;
-        canvas.height = imageHeight;
-        canvas.style.display = 'block';
-        const ctx = canvas.getContext('2d');
-        const imageData = ctx.createImageData(canvas.width, canvas.height);
-        for (let i = 0; i < encryptedPixels.length; i++) {
-          imageData.data[i] = encryptedPixels[i];
+          reader.readAsDataURL(file);
+        } else {
+          alert('Please drop a PNG image.');
         }
-        ctx.putImageData(imageData, 0, 0);
-        globalPixelArray = encryptedPixels; // Update globalPixelArray to encrypted pixels for decryption
-      } else {
-        alert('Encryption failed: ' + data.message);
       }
-    })
-    .catch(error => {
-      console.error('Error encrypting image:', error);
     });
-  });
 
-  decryptImageBtn.addEventListener('click', () => {
-    const key = document.getElementById('key').value;
-    if (!globalPixelArray) {
-      alert('Please drop a PNG image first.');
-      return;
-    }
-    if (!key) {
-      alert('Please enter a key.');
-      return;
-    }
+    encryptImageBtn.addEventListener('click', () => {
+      const key = document.getElementById('key').value;
+      if (!globalPixelArray) {
+        alert('Please drop a PNG image first.');
+        return;
+      }
+      if (!key) {
+        alert('Please enter a key.');
+        return;
+      }
 
-    fetch('/decrypt_image/', {
-      method: 'POST',
-      headers: {
-        'X-CSRFToken': '{{ csrf_token }}',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ encrypted_array: globalPixelArray, key: key })
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.status === 'success') {
-        const decryptedPixels = data.decrypted_pixels;
-        const canvas = encryptedCanvas;
-        canvas.width = imageWidth;
-        canvas.height = imageHeight;
-        canvas.style.display = 'block';
-        const ctx = canvas.getContext('2d');
-        const imageData = ctx.createImageData(canvas.width, canvas.height);
-        for (let i = 0; i < decryptedPixels.length; i++) {
-          imageData.data[i] = decryptedPixels[i];
+      fetch('/encrypt_image/', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': '{{ csrf_token }}',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ pixel_array: globalPixelArray, key: key })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          console.log(globalPixelArray)
+          const encryptedPixels = data.encrypted_pixels;
+          const canvas = encryptedCanvas;
+          canvas.width = imageWidth;
+          canvas.height = imageHeight;
+          canvas.classList.remove('hidden');
+          const ctx = canvas.getContext('2d');
+          const imageData = ctx.createImageData(canvas.width, canvas.height);
+          for (let i = 0; i < encryptedPixels.length; i++) {
+            imageData.data[i] = encryptedPixels[i];
+          }
+          ctx.putImageData(imageData, 0, 0);
+          globalPixelArray = encryptedPixels; // Update globalPixelArray to encrypted pixels for decryption
+        } else {
+          alert('Encryption failed: ' + data.message);
         }
-        ctx.putImageData(imageData, 0, 0);
-        globalPixelArray = decryptedPixels; // Update globalPixelArray to decrypted pixels
-      } else {
-        alert('Decryption failed: ' + data.message);
-      }
-    })
-    .catch(error => {
-      console.error('Error decrypting image:', error);
+      })
+      .catch(error => {
+        console.error('Error encrypting image:', error);
+      });
     });
-  });
-</script>
 
+    decryptImageBtn.addEventListener('click', () => {
+      const key = document.getElementById('key').value;
+      if (!globalPixelArray) {
+        alert('Please drop a PNG image first.');
+        return;
+      }
+      if (!key) {
+        alert('Please enter a key.');
+        return;
+      }
+
+      fetch('/decrypt_image/', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': '{{ csrf_token }}',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ encrypted_array: globalPixelArray, key: key })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          const decryptedPixels = data.decrypted_pixels;
+          const canvas = encryptedCanvas;
+          canvas.width = imageWidth;
+          canvas.height = imageHeight;
+          canvas.classList.remove('hidden');
+          const ctx = canvas.getContext('2d');
+          const imageData = ctx.createImageData(canvas.width, canvas.height);
+          for (let i = 0; i < decryptedPixels.length; i++) {
+            imageData.data[i] = decryptedPixels[i];
+          }
+          ctx.putImageData(imageData, 0, 0);
+          globalPixelArray = decryptedPixels; // Update globalPixelArray to decrypted pixels
+        } else {
+          alert('Decryption failed: ' + data.message);
+        }
+      })
+      .catch(error => {
+        console.error('Error decrypting image:', error);
+      });
+    });
+  </script>
 </body>
 </html>
 </create_file>
